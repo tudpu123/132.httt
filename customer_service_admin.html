@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服管理后台 - 深夜密友</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .header { 
+            background: rgba(255, 255, 255, 0.95); 
+            color: #333; 
+            padding: 25px 40px; 
+            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 { 
+            font-size: 2.5em; 
+            margin-bottom: 10px; 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 30px auto; 
+            padding: 0 20px; 
+        }
+        
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            gap: 25px; 
+            margin-bottom: 40px; 
+        }
+        
+        .stat-card { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; 
+            border-radius: 15px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1); 
+            text-align: center; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        
+        .stat-number { 
+            font-size: 3em; 
+            font-weight: bold; 
+            color: #667eea; 
+            margin-bottom: 10px;
+        }
+        
+        .stat-card i {
+            font-size: 2.5em;
+            color: #764ba2;
+            margin-bottom: 15px;
+        }
+        
+        .dashboard { 
+            display: grid; 
+            grid-template-columns: 1fr 400px; 
+            gap: 30px; 
+            margin-bottom: 40px; 
+        }
+        
+        .conversation-list { 
+            background: rgba(255, 255, 255, 0.95); 
+            border-radius: 15px; 
+            padding: 30px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .conversation-item { 
+            border-bottom: 1px solid #eee; 
+            padding: 20px 0; 
+            transition: background-color 0.3s ease;
+        }
+        
+        .conversation-item:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 0 -10px;
+        }
+        
+        .conversation-item:last-child { border-bottom: none; }
+        
+        .sidebar { 
+            background: rgba(255, 255, 255, 0.95); 
+            border-radius: 15px; 
+            padding: 30px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .agent-status {
+            margin-bottom: 30px;
+        }
+        
+        .agent-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        
+        .status-online { background: #4CAF50; }
+        .status-offline { background: #f44336; }
+        
+        .quick-actions {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .message-preview {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .timestamp {
+            color: #999;
+            font-size: 0.8em;
+            float: right;
+        }
+        
+        .customer-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            margin-left: 10px;
+        }
+        
+        .status-active { background: #4CAF50; color: white; }
+        .status-closed { background: #f44336; color: white; }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+        }
+        
+        @media (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-headset"></i> 客服管理后台</h1>
+        <p>深夜密友交友平台 - 实时客服系统监控</p>
+    </div>
+    
+    <div class="container">
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <i class="fas fa-comments"></i>
+                <div class="stat-number" id="total-conversations">0</div>
+                <div>总对话数</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-bolt"></i>
+                <div class="stat-number" id="active-conversations">0</div>
+                <div>活跃对话</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-envelope"></i>
+                <div class="stat-number" id="total-messages">0</div>
+                <div>总消息数</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-user-check"></i>
+                <div class="stat-number" id="online-agents">0</div>
+                <div>在线客服</div>
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="conversation-list">
+                <h2 style="margin-bottom: 20px; color: #333;">
+                    <i class="fas fa-list"></i> 最近对话
+                </h2>
+                <div id="conversations" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> 加载中...
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="agent-status">
+                    <h3 style="margin-bottom: 20px; color: #333;">
+                        <i class="fas fa-users"></i> 客服状态
+                    </h3>
+                    <div id="agents">
+                        <div class="agent-item">
+                            <div class="status-indicator status-online"></div>
+                            <div>
+                                <strong>客服小助手</strong>
+                                <div style="font-size: 0.8em; color: #666;">在线</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <h3 style="margin-bottom: 20px; color: #333;">
+                        <i class="fas fa-cog"></i> 快捷操作
+                    </h3>
+                    <button class="action-btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> 刷新数据
+                    </button>
+                    <button class="action-btn" onclick="exportData()">
+                        <i class="fas fa-download"></i> 导出数据
+                    </button>
+                    <button class="action-btn" onclick="clearOldData()">
+                        <i class="fas fa-trash"></i> 清理旧数据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="refresh-btn" onclick="refreshData()" title="刷新数据">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+    
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                if (!response.ok) throw new Error('API请求失败');
+                
+                const stats = await response.json();
+                
+                document.getElementById('total-conversations').textContent = stats.total_conversations;
+                document.getElementById('active-conversations').textContent = stats.active_conversations;
+                document.getElementById('total-messages').textContent = stats.total_messages;
+                document.getElementById('online-agents').textContent = stats.online_agents;
+                
+            } catch (error) {
+                console.error('加载统计信息失败:', error);
+                showError('统计信息加载失败，请检查API服务是否运行');
+            }
+        }
+        
+        async function loadConversations() {
+            try {
+                const response = await fetch(`${API_BASE}/conversations`);
+                if (!response.ok) throw new Error('API请求失败');
+                
+                const data = await response.json();
+                const container = document.getElementById('conversations');
+                
+                if (data.conversations && data.conversations.length > 0) {
+                    container.innerHTML = '';
+                    
+                    // 按最后活跃时间排序
+                    data.conversations.sort((a, b) => new Date(b.last_active) - new Date(a.last_active));
+                    
+                    data.conversations.forEach(conv => {
+                        const item = document.createElement('div');
+                        item.className = 'conversation-item';
+                        
+                        const statusClass = conv.status === 'active' ? 'status-active' : 'status-closed';
+                        const statusText = conv.status === 'active' ? '活跃' : '已关闭';
+                        
+                        item.innerHTML = `
+                            <div class="customer-name">
+                                ${conv.customer_name}
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <span class="timestamp">${formatDate(conv.last_active)}</span>
+                            <div class="message-preview">${conv.last_message || '暂无消息'}</div>
+                            <div style="margin-top: 10px; font-size: 0.8em; color: #666;">
+                                消息数: ${conv.message_count}
+                            </div>
+                        `;
+                        
+                        container.appendChild(item);
+                    });
+                } else {
+                    container.innerHTML = '<div class="loading">暂无对话记录</div>';
+                }
+                
+            } catch (error) {
+                console.error('加载对话列表失败:', error);
+                document.getElementById('conversations').innerHTML = 
+                    '<div class="loading">对话列表加载失败</div>';
+            }
+        }
+        
+        async function loadAgents() {
+            try {
+                const response = await fetch(`${API_BASE}/agent_status`);
+                if (!response.ok) throw new Error('API请求失败');
+                
+                const data = await response.json();
+                const container = document.getElementById('agents');
+                
+                if (data.agents && data.agents.length > 0) {
+                    container.innerHTML = '';
+                    
+                    data.agents.forEach(agent => {
+                        const item = document.createElement('div');
+                        item.className = 'agent-item';
+                        
+                        const statusClass = agent.status === 'online' ? 'status-online' : 'status-offline';
+                        const statusText = agent.status === 'online' ? '在线' : '离线';
+                        
+                        item.innerHTML = `
+                            <div class="status-indicator ${statusClass}"></div>
+                            <div>
+                                <strong>${agent.name}</strong>
+                                <div style="font-size: 0.8em; color: #666;">${statusText}</div>
+                            </div>
+                        `;
+                        
+                        container.appendChild(item);
+                    });
+                }
+                
+            } catch (error) {
+                console.error('加载客服状态失败:', error);
+            }
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) { // 1分钟内
+                return '刚刚';
+            } else if (diff < 3600000) { // 1小时内
+                return Math.floor(diff / 60000) + '分钟前';
+            } else if (diff < 86400000) { // 1天内
+                return Math.floor(diff / 3600000) + '小时前';
+            } else {
+                return date.toLocaleDateString('zh-CN');
+            }
+        }
+        
+        function showError(message) {
+            // 简单的错误提示
+            alert(message);
+        }
+        
+        async function refreshData() {
+            // 显示加载状态
+            document.getElementById('conversations').innerHTML = 
+                '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 刷新中...</div>';
+            
+            await Promise.all([
+                loadStats(),
+                loadConversations(),
+                loadAgents()
+            ]);
+        }
+        
+        function exportData() {
+            // 简单的数据导出功能
+            alert('数据导出功能开发中...');
+        }
+        
+        function clearOldData() {
+            if (confirm('确定要清理30天前的旧数据吗？此操作不可恢复。')) {
+                alert('数据清理功能开发中...');
+            }
+        }
+        
+        // 页面加载时获取数据
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshData();
+        });
+        
+        // 每30秒自动刷新数据
+        setInterval(() => {
+            loadStats();
+            loadConversations();
+            loadAgents();
+        }, 30000);
+    </script>
+</body>
+</html>
